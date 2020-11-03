@@ -9,19 +9,35 @@ import time
 ################## setup ##################
 
 # minimax
-max_depth = 8
-weight = [40,70,120,200,120,70,40]
+max_depth = 9
 
 #selenium
 driver_path = r'C:\\Program Files (x86)\\Common Files\\selenium\\msedgedriver.exe'
 driver = webdriver.Edge(executable_path=driver_path)
 driver.get("http://connect4.ist.tugraz.at:8080/")
 
+# memoization
+f = open('connect4_mem.txt','r')
+mem = {}
+for line in f :
+    print(line.strip(),end='\n')
+    k,v = line.strip().split()
+    mem[k]=int(v)
+f.close()
+f = open('connect4_mem.txt','a')
+
 ###########################################
 
 # activate AI(b)
 elem = driver.find_element_by_name("optionsaib")
 elem.click()
+
+# board to state
+def board2state(board) :
+    s = ''
+    for row in board :
+        s+= ''.join(row)
+    return s
 
 # show board
 def showBoard(board) :
@@ -176,13 +192,25 @@ is_a_turn = False
 push(3,oldBoard)
 t=1
 while sum([row.count('e') for row in getBoard()]) > 0 :
+    if getScore(getBoard(),'a') == 4 :
+        print('WIN')
+        break
+    if getScore(getBoard(),'b') == 4 :
+        print('LOSE')
+        break
     if is_a_turn:
-        print('========== time '+str(t)+' ==========')
+        print('\nROUND '+str(t))
         t+=1
         tempBoard = getBoard()
         showBoard(tempBoard)
-        val,nextMove = minimax(tempBoard,max_depth,-math.inf,math.inf,'a')
-        push(nextMove,tempBoard)
+        state = board2state(tempBoard)
+        if state in mem.keys() :
+            push(mem[state],tempBoard)
+        else :
+            val,nextMove = minimax(tempBoard,max_depth,-math.inf,math.inf,'a')
+            push(nextMove,tempBoard)
+            f.write(state+" "+str(nextMove)+"\n")
+            mem[state]=nextMove
         is_a_turn = False
     else:
         while getBoard() == oldBoard :
@@ -190,4 +218,5 @@ while sum([row.count('e') for row in getBoard()]) > 0 :
             oldBoard = getBoard()
         is_a_turn = True
 
-driver.quit()
+f.close()
+# driver.quit()
