@@ -9,21 +9,35 @@ import time
 ################## setup ##################
 
 # minimax
-max_depth = 9
+max_depth = 10
 
-#selenium
-driver_path = r'C:\\Program Files (x86)\\Common Files\\selenium\\msedgedriver.exe'
-driver = webdriver.Edge(executable_path=driver_path)
+# selenium
+print("Load Driver")
+# edge
+
+# driver_path = 'C:\\Program Files (x86)\\Common Files\\selenium\\msedgedriver.exe'
+# driver = webdriver.Edge(executable_path=driver_path)
+
+#chrome
+from webdriver_manager.chrome import ChromeDriverManager
+driver = webdriver.Chrome(ChromeDriverManager().install())
+
 driver.get("http://connect4.ist.tugraz.at:8080/")
+driver.refresh()
+insert_channel = driver.find_element_by_id("board")
+insert_channel = insert_channel.find_elements_by_tag_name("tr")[0]
+print("Success!")
 
 # memoization
+print("Load Memory")
 f = open('connect4_mem.txt','r')
 mem = {}
 for line in f :
-    print(line.strip(),end='\n')
+    #print(line.strip(),end='\n')
     k,v = line.strip().split()
     mem[k]=int(v)
 f.close()
+print("Success!")
 f = open('connect4_mem.txt','a')
 
 ###########################################
@@ -31,6 +45,7 @@ f = open('connect4_mem.txt','a')
 # activate AI(b)
 elem = driver.find_element_by_name("optionsaib")
 elem.click()
+print("Activate AI Perfect...")
 
 # board to state
 def board2state(board) :
@@ -139,12 +154,8 @@ def getScore(board,chip) :
 def push(col,board):
     if board[0][col] != 'e':
         return False
-    ele_board = driver.find_element_by_id("board")
-    all_tr = ele_board.find_elements_by_tag_name("tr")
-    for tr in all_tr :
-        all_td = tr.find_elements_by_tag_name("td")
-        all_td[col].click()
-        break
+    all_td = insert_channel.find_elements_by_tag_name("td")
+    all_td[col].click()
     return True    
 
 # compare function
@@ -206,13 +217,25 @@ def minimax(board,depth,alpha,beta,chip) :
         return min_score,next_col
 
 
-########## main ##########
+# thread
+def count_down_thread():
+    n=20
+    print('\n'+str(n)+'..',end='')
+    for i in range(n,-1,-1):
+      time.sleep(1)
+      if terminate_flag:
+        break
+      print(str(i)+'..',end='')
+    print()
 
+########## main ##########
+print("Enter main")
 # init move
 oldBoard = getBoard()
 is_a_turn = False
 push(3,oldBoard)
 t=1
+print("Loop Game...")
 while sum([row.count('e') for row in getBoard()]) > 0 :
     if getScore(getBoard(),'a') == 4 :
         print('WIN')
@@ -229,7 +252,11 @@ while sum([row.count('e') for row in getBoard()]) > 0 :
         if state in mem.keys() :
             push(mem[state],tempBoard)
         else :
+            ct=threading.Thread(target=count_down_thread)
+            terminate_flag=False
+            ct.start()
             val,nextMove = minimax(tempBoard,max_depth,-math.inf,math.inf,'a')
+            terminate_flag=True
             push(nextMove,tempBoard)
             f.write(state+" "+str(nextMove)+"\n")
             mem[state]=nextMove
