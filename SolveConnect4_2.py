@@ -13,10 +13,6 @@ max_depth = 9
 
 # selenium
 print("Load Driver")
-# edge
-
-# driver_path = 'C:\\Program Files (x86)\\Common Files\\selenium\\msedgedriver.exe'
-# driver = webdriver.Edge(executable_path=driver_path)
 
 #chrome
 from webdriver_manager.chrome import ChromeDriverManager
